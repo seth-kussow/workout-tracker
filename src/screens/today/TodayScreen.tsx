@@ -40,8 +40,14 @@ export function TodayScreen() {
 
   const initialEntries: WorkoutLogEntry[] | undefined = plannedTemplate?.exercises.map((te) => ({
     exerciseId: te.exerciseId,
-    sets: Array.from({ length: te.targetSets ?? 1 }, () => ({})),
+    sets: Array.from({ length: te.targetSets ?? 1 }, () => ({ reps: te.targetReps })),
   }));
+
+  const exercisePrescriptions = plannedTemplate
+    ? Object.fromEntries(
+        plannedTemplate.exercises.filter((te) => te.prescription).map((te) => [te.exerciseId, te.prescription!]),
+      )
+    : undefined;
 
   const handleSave = async (draft: WorkoutLog) => {
     const id = await saveWorkoutLog({ ...draft, templateId: plannedTemplate?.id });
@@ -95,6 +101,7 @@ export function TodayScreen() {
           initial={log ?? (initialEntries ? { date, entries: initialEntries, exerciseIds: [] } : undefined)}
           onSave={handleSave}
           saveLabel={log ? 'Update workout' : 'Save workout'}
+          exercisePrescriptions={exercisePrescriptions}
         />
       )}
 

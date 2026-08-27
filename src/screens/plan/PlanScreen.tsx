@@ -7,6 +7,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { DayTemplatePicker } from './DayTemplatePicker';
 import { TemplateEditor } from './TemplateEditor';
+import { importPotreroChicoPlan } from '../../features/importPlan/importPotreroChicoPlan';
 
 export function PlanScreen() {
   const weeklyPlan = useLiveQuery(() => getWeeklyPlan(), []) ?? [];
@@ -19,6 +20,12 @@ export function PlanScreen() {
 
   const [pickerDay, setPickerDay] = useState<number | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | 'new' | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+
+  const handleImportPlan = async () => {
+    const result = await importPotreroChicoPlan();
+    setImportMessage(`Imported ${result.templatesImported} workouts, ${result.exercisesCreated} new exercises.`);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -53,9 +60,14 @@ export function PlanScreen() {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-medium text-slate-400">Workouts</h2>
-          <Button variant="ghost" onClick={() => setEditingTemplate('new')}>
-            + New
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={handleImportPlan}>
+              Import climbing plan
+            </Button>
+            <Button variant="ghost" onClick={() => setEditingTemplate('new')}>
+              + New
+            </Button>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           {templates.map((t) => (
@@ -68,6 +80,7 @@ export function PlanScreen() {
           ))}
           {templates.length === 0 && <p className="text-sm text-slate-500">No workouts yet.</p>}
         </div>
+        {importMessage && <p className="mt-2 text-xs text-slate-500">{importMessage}</p>}
       </div>
 
       <DayTemplatePicker

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { WorkoutLog } from '../../db/schema';
-import { deleteWorkoutLog, getWorkoutLog, saveWorkoutLog } from '../../db/queries';
+import { deleteWorkoutLog, getTemplate, getWorkoutLog, saveWorkoutLog } from '../../db/queries';
 import { formatDisplayDate } from '../../lib/date';
 import { Button } from '../../components/common/Button';
 import { WorkoutLogEditor } from '../../components/workout/WorkoutLogEditor';
@@ -12,8 +12,18 @@ interface LogDetailProps {
 
 export function LogDetail({ logId, onBack }: LogDetailProps) {
   const log = useLiveQuery(() => getWorkoutLog(logId), [logId]);
+  const template = useLiveQuery(
+    () => (log?.templateId != null ? getTemplate(log.templateId) : undefined),
+    [log?.templateId],
+  );
 
   if (!log) return null;
+
+  const exercisePrescriptions = template
+    ? Object.fromEntries(
+        template.exercises.filter((te) => te.prescription).map((te) => [te.exerciseId, te.prescription!]),
+      )
+    : undefined;
 
   const handleSave = async (draft: WorkoutLog) => {
     await saveWorkoutLog(draft);
@@ -32,7 +42,13 @@ export function LogDetail({ logId, onBack }: LogDetailProps) {
       </button>
       <h1 className="text-2xl font-semibold">{formatDisplayDate(log.date)}</h1>
 
-      <WorkoutLogEditor date={log.date} initial={log} onSave={handleSave} saveLabel="Save changes" />
+      <WorkoutLogEditor
+        date={log.date}
+        initial={log}
+        onSave={handleSave}
+        saveLabel="Save changes"
+        exercisePrescriptions={exercisePrescriptions}
+      />
 
       <Button variant="danger" onClick={handleDelete}>
         Delete workout

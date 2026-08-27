@@ -37,6 +37,10 @@ export function TemplateEditor({ open, onClose, initial }: TemplateEditorProps) 
     setItems((prev) => prev.filter((i) => i.exerciseId !== exerciseId));
   };
 
+  const updateItem = (exerciseId: number, patch: Partial<TemplateExercise>) => {
+    setItems((prev) => prev.map((i) => (i.exerciseId === exerciseId ? { ...i, ...patch } : i)));
+  };
+
   const handleSave = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -62,11 +66,44 @@ export function TemplateEditor({ open, onClose, initial }: TemplateEditorProps) 
 
         <div className="flex flex-col gap-2">
           {items.map((item) => (
-            <div key={item.exerciseId} className="flex items-center justify-between rounded-xl bg-slate-800 px-3 py-2.5">
-              <span className="text-slate-100">{exerciseById.get(item.exerciseId)?.name}</span>
-              <button onClick={() => removeItem(item.exerciseId)} className="text-sm text-red-400">
-                Remove
-              </button>
+            <div key={item.exerciseId} className="rounded-xl bg-slate-800 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-100">{exerciseById.get(item.exerciseId)?.name}</span>
+                <button onClick={() => removeItem(item.exerciseId)} className="text-sm text-red-400">
+                  Remove
+                </button>
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                <label className="flex items-center gap-1.5 text-sm text-slate-400">
+                  Sets
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={item.targetSets ?? ''}
+                    onChange={(e) =>
+                      updateItem(item.exerciseId, { targetSets: e.target.value === '' ? undefined : Number(e.target.value) })
+                    }
+                    className="w-14 rounded-lg bg-slate-700 px-2 py-1 text-center text-slate-100"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 text-sm text-slate-400">
+                  Reps
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={item.targetReps ?? ''}
+                    onChange={(e) =>
+                      updateItem(item.exerciseId, { targetReps: e.target.value === '' ? undefined : Number(e.target.value) })
+                    }
+                    className="w-14 rounded-lg bg-slate-700 px-2 py-1 text-center text-slate-100"
+                  />
+                </label>
+              </div>
+              {item.prescription && (
+                <p className="mt-2 whitespace-pre-line text-xs text-slate-500">{item.prescription}</p>
+              )}
             </div>
           ))}
         </div>

@@ -23,6 +23,10 @@ export async function addExercise(name: string, defaultUnit: Exercise['defaultUn
   return db.exercises.add({ name: trimmed, defaultUnit });
 }
 
+export function getExerciseByName(name: string): Promise<Exercise | undefined> {
+  return db.exercises.where('name').equalsIgnoreCase(name).first();
+}
+
 export async function renameExercise(id: number, name: string) {
   const trimmed = name.trim();
   if (!trimmed) throw new Error('Exercise name is required');
@@ -41,6 +45,10 @@ export function listTemplates(): Promise<WorkoutTemplate[]> {
 
 export function getTemplate(id: number): Promise<WorkoutTemplate | undefined> {
   return db.workoutTemplates.get(id);
+}
+
+export function getTemplateByName(name: string): Promise<WorkoutTemplate | undefined> {
+  return db.workoutTemplates.where('name').equalsIgnoreCase(name).first();
 }
 
 export function saveTemplate(template: WorkoutTemplate) {

@@ -13,9 +13,18 @@ interface WorkoutLogEditorProps {
   onSave: (log: WorkoutLog) => Promise<void>;
   onCancel?: () => void;
   saveLabel?: string;
+  /** exerciseId -> guidance text, shown under the exercise name when logging against a template. */
+  exercisePrescriptions?: Record<number, string>;
 }
 
-export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 'Save workout' }: WorkoutLogEditorProps) {
+export function WorkoutLogEditor({
+  date,
+  initial,
+  onSave,
+  onCancel,
+  saveLabel = 'Save workout',
+  exercisePrescriptions,
+}: WorkoutLogEditorProps) {
   const exercises = useLiveQuery(() => listExercises(), []) ?? [];
   const exerciseById = new Map(exercises.map((e) => [e.id!, e]));
 
@@ -25,7 +34,7 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
 
   const addExerciseEntry = (exercise: Exercise) => {
     if (entries.some((e) => e.exerciseId === exercise.id)) return;
-    setEntries((prev) => [...prev, { exerciseId: exercise.id!, sets: [{}] }]);
+    setEntries((prev) => [...prev, { exerciseId: exercise.id!, sets: [] }]);
   };
 
   const removeExerciseEntry = (exerciseId: number) => {
@@ -36,6 +45,11 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
     setEntries((prev) =>
       prev.map((e) => (e.exerciseId === exerciseId ? { ...e, sets: [...e.sets, lastSetAsDefault(e.sets)] } : e)),
     );
+  };
+
+  const addSetsBatch = (exerciseId: number, count: number, reps?: number) => {
+    const newSets: SetEntry[] = Array.from({ length: Math.max(1, count) }, () => ({ reps }));
+    setEntries((prev) => prev.map((e) => (e.exerciseId === exerciseId ? { ...e, sets: newSets } : e)));
   };
 
   const removeSet = (exerciseId: number, index: number) => {
@@ -74,6 +88,7 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
     <div className="flex flex-col gap-3">
       {entries.map((entry) => {
         const exercise = exerciseById.get(entry.exerciseId);
+        const prescription = exercisePrescriptions?.[entry.exerciseId];
         return (
           <Card key={entry.exerciseId}>
             <div className="mb-2 flex items-center justify-between">
@@ -85,6 +100,10 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
                 Remove
               </button>
             </div>
+            {prescription && <p className="mb-3 whitespace-pre-line text-xs text-slate-500">{prescription}</p>}
+            {entry.sets.length === 0 ? (
+              <QuickAddSets onAdd={(count, reps) => addSetsBatch(entry.exerciseId, count, reps)} />
+            ) : (
             <div className="flex flex-col gap-3">
               {entry.sets.map((set, i) => (
                 <div key={i} className="flex items-end gap-3">
@@ -113,6 +132,7 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
                 + Add set
               </Button>
             </div>
+            )}
           </Card>
         );
       })}
@@ -151,4 +171,44 @@ export function WorkoutLogEditor({ date, initial, onSave, onCancel, saveLabel = 
 function lastSetAsDefault(sets: SetEntry[]): SetEntry {
   const last = sets.at(-1);
   return last ? { reps: last.reps, weight: last.weight } : {};
+}
+
+function QuickAddSets({ onAdd }: { onAdd: (count: number, reps?: number) => void }) {
+  const [sets, setSets] = useState(3);
+  const [reps, setReps] = useState<number | undefined>(10);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end gap-3">
+        <label className="flex flex-col gap-1 text-xs text-slate-400">
+          Sets
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={sets}
+            onChange={(e) => setSets(Math.max(1, Number(e.target.value) || 1))}
+            className="w-16 rounded-lg bg-slate-800 px-2 py-2 text-center text-base text-slate-100"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-slate-400">
+          Reps
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={reps ?? ''}
+            onChange={(e) => setReps(e.target.value === '' ? undefined : Number(e.target.value))}
+            className="w-16 rounded-lg bg-slate-800 px-2 py-2 text-center text-base text-slate-100"
+          />
+        </label>
+        <Button className="flex-1" onClick={() => onAdd(sets, reps)}>
+          Add {sets} set{sets === 1 ? '' : 's'}
+        </Button>
+      </div>
+      <button type="button" onClick={() => onAdd(1, undefined)} className="self-start text-xs text-sky-300">
+        or add sets one at a time
+      </button>
+    </div>
+  );
 }

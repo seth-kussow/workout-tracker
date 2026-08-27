@@ -11,6 +11,9 @@ export interface Exercise {
 export interface TemplateExercise {
   exerciseId: number;
   targetSets?: number;
+  targetReps?: number;
+  /** Free-text guidance (grade, rest, coaching notes) carried over from an imported plan. */
+  prescription?: string;
 }
 
 export interface WorkoutTemplate {
